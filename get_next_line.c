@@ -1,12 +1,23 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jgarside <jgarside@student.42berlin.d      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/09/27 20:45:21 by jgarside          #+#    #+#             */
+/*   Updated: 2023/09/27 20:45:25 by jgarside         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 #include "get_next_line.h"
+
 /**
- * 'ft_get_line': reads data from a file descriptor in chunks, concatenates it with the existing 'line',
+ * 'read_chunk': reads data from a file descriptor in chunks, concatenates it with the existing 'line',
  *  and continues until a newline character is encountered or the end of the file is reached.
  *  It dynamically allocates memory for the buffer and cleans up after reading.
- * 
 */
 
-char	*ft_get_line(int fd, char *line)
+char	*read_chunk(int fd, char *line)
 {
 	char	*buffer;
 	ssize_t	read_bytes;
@@ -30,7 +41,12 @@ char	*ft_get_line(int fd, char *line)
 	return (line);
 }
 
-char	*new_line(char *line)
+/**
+ * 'get_remainder': Extracts the remainder of a line after the first newline character.
+ * 	Returns the remainder of the line.
+*/
+
+char	*get_remainder(char *line)
 {
 	int		i;
 	int		j;
@@ -56,7 +72,11 @@ char	*new_line(char *line)
 	return (str);
 }
 
-char	*ft_get_next_line(char *line)
+/**
+ * 'extract_line': isolates and return a complete line from the current line.
+*/
+
+char	*extract_line(char *line)
 {
 	int		i;
 	char	*str;
@@ -83,22 +103,34 @@ char	*ft_get_next_line(char *line)
 	str[i] = '\0';
 	return (str);
 }
+/**
+ * A static variable in C is a variable that retains its value across function calls. 
+ * This means that even if the 	function returns, the static variable will still keep its value.
+ * This function uses a static variable to store the remaining data in the buffer. 
+ * This is necessary because the function may need to read data from the file multiple times in order to extract a complete line.
+ * If the function did not use a static variable to store the remaining data in the buffer, 
+ * then the function would lose the remaining data when it returned from the first call. 
+ * This would result in the function returning an incomplete line to the caller.
+ * By using a static variable to store the remaining data in the buffer, the get_next_line() function is able to extract complete lines from the file,
+ * even if the lines are longer than the buffer size.
+*/
 
 char	*get_next_line(int fd)
 {
 	static char			*line;
-	char				*next_line;
+	char				*complete_line;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	line = ft_get_line(fd, line);
+	line = read_chunk(fd, line);
 	if (!line)
 		return (NULL);
-	next_line = ft_get_next_line(line);
-	line = new_line(line);
-	return (next_line);
+	complete_line = extract_line(line);
+	line = get_remainder(line);
+	return (complete_line);
 }
 
+/*
 int main(void) 
 {
     int fd = open("example.txt", O_RDONLY);
@@ -109,7 +141,7 @@ int main(void)
     }
 
     char *line;
-    while ((line = get_next_line(fd))) 
+    while ((line = get_next_line(fd)) != NULL)
     {
         printf("%s\n", line);
         free(line);
@@ -118,3 +150,4 @@ int main(void)
     close(fd);
     return 0;
 }
+*/
